@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Mail;
 use App\Models\Customer;
 use App\Models\Redemption;
 use App\Models\Reward;
@@ -84,6 +85,7 @@ public function createCustomer()
     return view('staff.customer-create');
 }
 
+
 public function storeCustomer(Request $request)
 {
     $validated = $request->validate([
@@ -92,7 +94,6 @@ public function storeCustomer(Request $request)
             'string',
             'max:100',
         ],
-
         'nomor_hp' => [
             'required',
             'string',
@@ -100,18 +101,16 @@ public function storeCustomer(Request $request)
             'unique:users,username',
             'unique:customers,nomor_hp',
         ],
-
         'email' => [
-            'nullable',
+            'required',
             'email',
             'max:255',
+            'unique:customers,email',
         ],
-
         'tanggal_lahir' => [
             'nullable',
             'date',
         ],
-
         'password' => [
             'required',
             'string',
@@ -119,99 +118,343 @@ public function storeCustomer(Request $request)
             'confirmed',
         ],
     ], [
+        'nama.required' =>
+            'Nama lengkap wajib diisi.',
+
         'nomor_hp.unique' =>
             'Nomor WhatsApp tersebut sudah terdaftar sebagai member.',
 
         'nomor_hp.regex' =>
-            'Nomor WhatsApp harus diawali 08 dan berisi 10-14 digit.',
+            'Nomor WhatsApp harus diawali 08 dan berisi 10–14 digit.',
+
+        'email.required' =>
+            'Email wajib diisi untuk verifikasi member.',
+
+        'email.email' =>
+            'Format email tidak valid.',
+
+        'email.unique' =>
+            'Email sudah terdaftar sebagai member.',
+
+        'password.min' =>
+            'Password minimal 8 karakter.',
 
         'password.confirmed' =>
             'Konfirmasi password tidak cocok.',
     ]);
 
+    $otp = (string) random_int(100000, 999999);
+
+    // Simpan sementara data pendaftaran staff di session.
+    // Password disimpan dalam bentuk hash, bukan teks asli.
+    $registration = [
+        'nama' => $validated['nama'],
+        'nomor_hp' => $validated['nomor_hp'],
+        'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
+        'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+        'otp_hash' => Hash::make($otp),
+        'attempts' => 0,
+    ];
+
     try {
+        Mail::raw(
+            "Halo {$validated['nama']},\n\n"
+            . "Kode OTP untuk verifikasi pembuatan member "
+            . "SAÉ CAFE ROJEL kamu adalah:\n\n"
+            . "{$otp}\n\n"
+            . "Kode ini berlaku selama 5 menit dan hanya "
+            . "dapat digunakan satu kali.\n"
+            . "Jangan bagikan kode ini kepada siapa pun.\n\n"
+            . "Jika kamu tidak merasa melakukan pendaftaran, "
+            . "abaikan email ini.",
+            function ($message) use ($validated) {
+                $message->to($validated['email'])
+                    ->subject(
+                        'Verifikasi Member - SAÉ CAFE ROJEL'
+                    );
+            }
+        );
 
-        $customer = DB::transaction(function () use ($validated) {
+        // Mulai masa berlaku setelah email berhasil dikirim.
+        $resendAvailableAt = now()->addMinutes(5)->timestamp;
 
+        $registration['otp_expires_at'] = $resendAvailableAt;
+        $registration['otp_resend_available_at'] = $resendAvailableAt;
+
+        $request->session()->put(
+            'staff_customer_registration',
+            $registration
+        );
+
+    } catch (\Throwable $e) {
+        report($e);
+
+        $request->session()->forget('staff_customer_registration');
+
+        return back()
+            ->withErrors([
+                'email' =>
+                    'Email OTP gagal dikirim. Periksa alamat email dan coba kembali.',
+            ])
+            ->withInput(
+                $request->except([
+                    'password',
+                    'password_confirmation',
+                ])
+            );
+    }
+
+    return redirect()
+        ->route('staff.customers.verify')
+        ->with(
+            'success',
+            'Kode OTP telah dikirim ke email customer. Silakan verifikasi untuk menyelesaikan pendaftaran member.'
+        );
+}
+
+
+/**
+ * Menampilkan halaman verifikasi OTP untuk member yang ditambahkan staff.
+ */
+public function verifyCustomerOtp(Request $request)
+{
+    $registration = $request->session()->get(
+        'staff_customer_registration'
+    );
+
+    if (!$registration) {
+        return redirect()
+            ->route('staff.customers.create')
+            ->withErrors([
+                'register' => 'Sesi pendaftaran member sudah berakhir. Silakan masukkan data kembali.',
+            ]);
+    }
+
+    $resendAvailableAt = (int) (
+        $registration['otp_resend_available_at']
+        ?? $registration['otp_expires_at']
+        ?? now()->timestamp
+    );
+
+    $resendSeconds = max(
+        0,
+        $resendAvailableAt - now()->timestamp
+    );
+
+    return view(
+        'staff.customer-verify-otp',
+        compact('resendSeconds')
+    );
+}
+
+
+/**
+ * Memverifikasi OTP dan membuat member setelah kode benar.
+ */
+public function verifyCustomerOtpStore(Request $request)
+{
+    $request->validate([
+        'otp' => ['required', 'digits:6'],
+    ]);
+
+    $registration = $request->session()->get(
+        'staff_customer_registration'
+    );
+
+    if (!$registration) {
+        return redirect()
+            ->route('staff.customers.create')
+            ->withErrors([
+                'register' => 'Sesi pendaftaran member sudah berakhir. Silakan masukkan data kembali.',
+            ]);
+    }
+
+    if (now()->timestamp >= $registration['otp_expires_at']) {
+        return back()->withErrors([
+            'otp' => 'Kode OTP sudah kedaluwarsa. Silakan kirim ulang kode OTP.',
+        ]);
+    }
+
+    $registration['attempts'] =
+        (int) ($registration['attempts'] ?? 0) + 1;
+
+    if ($registration['attempts'] > 5) {
+        $request->session()->forget(
+            'staff_customer_registration'
+        );
+
+        return redirect()
+            ->route('staff.customers.create')
+            ->withErrors([
+                'register' => 'Batas percobaan OTP terlampaui. Silakan mulai pendaftaran member kembali.',
+            ]);
+    }
+
+    if (!Hash::check(
+        $request->input('otp'),
+        $registration['otp_hash']
+    )) {
+        $request->session()->put(
+            'staff_customer_registration',
+            $registration
+        );
+
+        return back()->withErrors([
+            'otp' => 'Kode OTP salah. Silakan periksa kembali email customer.',
+        ]);
+    }
+
+    try {
+        $customer = DB::transaction(function () use ($registration) {
             $user = User::create([
-                'username' => $validated['nomor_hp'],
-                'password' => Hash::make($validated['password']),
+                'username' => $registration['nomor_hp'],
+                'password' => $registration['password'],
                 'role' => 'customer',
                 'status' => 'aktif',
             ]);
 
-            /*
-             * Gunakan kode sementara yang pasti unik.
-             * Setelah customer dibuat, database akan memberikan
-             * id_customer secara otomatis.
-             */
-            $temporaryMemberCode = 'TMP-' . Str::uuid();
-
             $customer = Customer::create([
                 'id_user' => $user->id_user,
-
-                'member_code' => $temporaryMemberCode,
-
-                'qr_code' =>
-                    'SAE-QR-' . strtoupper(Str::random(12)),
-
-                'nama' => $validated['nama'],
-
-                'nomor_hp' => $validated['nomor_hp'],
-
-                'email' =>
-                    $validated['email'] ?? null,
-
-                'tanggal_lahir' =>
-                    $validated['tanggal_lahir'] ?? null,
-
+                'member_code' => 'TMP-' . Str::uuid(),
+                'qr_code' => 'SAE-QR-' . strtoupper(Str::random(12)),
+                'nama' => $registration['nama'],
+                'nomor_hp' => $registration['nomor_hp'],
+                'email' => $registration['email'],
+                'tanggal_lahir' => $registration['tanggal_lahir'] ?? null,
                 'tanggal_daftar' => now(),
-
                 'saldo_point' => 0,
-
                 'status_member' => 'aktif',
             ]);
 
-            /*
-             * Gunakan ID customer yang benar-benar diberikan
-             * oleh database untuk membentuk member_code.
-             */
-            $customer->member_code =
-                'SAE' . str_pad(
-                    $customer->id_customer,
-                    5,
-                    '0',
-                    STR_PAD_LEFT
-                );
+            $customer->member_code = 'SAE' . str_pad(
+                $customer->id_customer,
+                5,
+                '0',
+                STR_PAD_LEFT
+            );
 
             $customer->save();
 
             return $customer;
         });
-
-        return redirect()
-            ->route('staff.customers')
-            ->with(
-                'success',
-                "Member {$customer->nama} berhasil dibuat. " .
-                "Member Code: {$customer->member_code}."
-            );
-
     } catch (\Throwable $e) {
+        report($e);
 
-        Log::error('Gagal membuat customer dari staff', [
-            'exception' => $e,
-            'nomor_hp' => $validated['nomor_hp'] ?? null,
+        return back()->withErrors([
+            'register' => 'Member gagal dibuat. Data pendaftaran masih tersimpan; silakan coba kembali.',
         ]);
-
-        return back()
-            ->withErrors([
-                'customer' =>
-                    'Customer gagal dibuat. Silakan coba lagi.'
-            ])
-            ->withInput();
     }
+
+    $request->session()->forget(
+        'staff_customer_registration'
+    );
+
+ 
+try {
+    Mail::raw(
+        "Halo {$customer->nama},\n\n"
+        . "Selamat bergabung dengan SAÉ CAFE ROJEL!\n\n"
+        . "Akun member kamu berhasil diverifikasi dan dibuat.\n\n"
+        . "Silakan login menggunakan nomor WhatsApp dan password "
+        . "yang telah didaftarkan.\n\n"
+        . "Terima kasih telah menjadi bagian dari SAÉ CAFE ROJEL.\n\n"
+        . "Buka website SAÉ CAFE ROJEL:\n"
+        . route('login') . "\n\n"
+        . "Tautan ini hanya untuk membuka website. Verifikasi akun "
+        . "dilakukan dengan kode OTP saat pendaftaran.",
+        function ($message) use ($customer) {
+            $message->to($customer->email)
+                ->subject('Selamat Bergabung - SAÉ CAFE ROJEL');
+        }
+    );
+} catch (\Throwable $e) {
+    report($e);
 }
+
+
+    return redirect()
+        ->route('staff.customers')
+        ->with(
+            'success',
+            "Member {$customer->nama} berhasil diverifikasi dan dibuat. Member Code: {$customer->member_code}."
+        );
+}
+
+
+/**
+ * Mengirim ulang OTP untuk pendaftaran member oleh staff.
+ */
+public function resendCustomerOtp(Request $request)
+{
+    $registration = $request->session()->get(
+        'staff_customer_registration'
+    );
+
+    if (!$registration) {
+        return redirect()
+            ->route('staff.customers.create')
+            ->withErrors([
+                'register' => 'Sesi pendaftaran member sudah berakhir. Silakan masukkan data kembali.',
+            ]);
+    }
+
+    $resendAvailableAt = (int) (
+        $registration['otp_resend_available_at']
+        ?? $registration['otp_expires_at']
+        ?? 0
+    );
+
+    if (now()->timestamp < $resendAvailableAt) {
+        return back()->withErrors([
+            'register' => 'Tunggu sampai hitung mundur selesai sebelum meminta OTP baru.',
+        ]);
+    }
+
+    $otp = (string) random_int(100000, 999999);
+
+    try {
+        Mail::raw(
+            "Halo {$registration['nama']},\n\n"
+            . "Kode OTP untuk verifikasi pembuatan member SAÉ CAFE ROJEL kamu adalah:\n\n"
+            . "{$otp}\n\n"
+            . "Kode ini berlaku selama 5 menit dan hanya dapat digunakan satu kali.\n"
+            . "Jangan bagikan kode ini kepada siapa pun.\n\n"
+            . "Jika kamu tidak merasa melakukan pendaftaran, abaikan email ini.",
+            function ($message) use ($registration) {
+                $message->to($registration['email'])
+                    ->subject('Verifikasi Member - SAÉ CAFE ROJEL');
+            }
+        );
+    } catch (\Throwable $e) {
+        report($e);
+
+        return back()->withErrors([
+            'register' => 'Email OTP gagal dikirim. Silakan coba kembali.',
+        ]);
+    }
+
+    // OTP baru menggantikan OTP sebelumnya.
+    $resendAvailableAt = now()->addMinutes(5)->timestamp;
+
+    $registration['otp_hash'] = Hash::make($otp);
+    $registration['otp_expires_at'] = $resendAvailableAt;
+    $registration['otp_resend_available_at'] = $resendAvailableAt;
+    $registration['attempts'] = 0;
+
+    $request->session()->put(
+        'staff_customer_registration',
+        $registration
+    );
+
+    return redirect()
+        ->route('staff.customers.verify')
+        ->with(
+            'success',
+            'Kode OTP baru berhasil dikirim ke email customer. Kode berlaku selama 5 menit.'
+        );
+}
+
 
 public function transactions(Request $request)
 {
@@ -326,6 +569,108 @@ public function transactions(Request $request)
             'nomor_hp' => $customer->nomor_hp,
             'saldo_point' => $customer->saldo_point,
             'status_member' => $customer->status_member,
+        ],
+    ]);
+}
+
+public function scanRedemption(Request $request)
+{
+    $data = $request->validate([
+        'redemption_code' => [
+            'required',
+            'string',
+            'max:100',
+        ],
+    ]);
+
+    $code = trim($data['redemption_code']);
+
+    $redemption = Redemption::with([
+        'customer',
+        'reward',
+    ])
+        ->where('redemption_code', $code)
+        ->first();
+
+    if (!$redemption) {
+        return response()->json([
+            'message' => 'QR Redemption tidak ditemukan.',
+        ], 404);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cari redemption pending berikutnya
+    |--------------------------------------------------------------------------
+    |
+    | Digunakan untuk memastikan kasir hanya bisa mengonfirmasi
+    | redemption sesuai urutan FIFO.
+    |
+    */
+
+    $nextPendingCode = Redemption::query()
+        ->where(
+            'id_customer',
+            $redemption->id_customer
+        )
+        ->where('status', 'pending')
+        ->orderBy('created_at', 'asc')
+        ->orderBy('id_redemption', 'asc')
+        ->value('redemption_code');
+
+    $canConfirm =
+        $redemption->status === 'pending' &&
+        $nextPendingCode === $redemption->redemption_code;
+
+    return response()->json([
+        'message' => 'Redemption ditemukan.',
+        'data' => [
+            'redemption_code' =>
+                $redemption->redemption_code,
+
+            'status' =>
+                $redemption->status,
+
+            'point_used' =>
+                (int) $redemption->point_used,
+
+            'redeem_date' =>
+                optional($redemption->redeem_date)
+                    ->format('d M Y H:i'),
+
+            'can_confirm' =>
+                $canConfirm,
+
+            'customer' => [
+                'id_customer' =>
+                    $redemption->customer?->id_customer,
+
+                'nama' =>
+                    $redemption->customer?->nama,
+
+                'member_code' =>
+                    $redemption->customer?->member_code,
+
+                'nomor_hp' =>
+                    $redemption->customer?->nomor_hp,
+
+                'saldo_point' =>
+                    (int) ($redemption->customer?->saldo_point ?? 0),
+
+                'status_member' =>
+                    $redemption->customer?->status_member,
+            ],
+
+            'reward' => [
+                'id_reward' =>
+                    $redemption->reward?->id_reward,
+
+                'reward_name' =>
+                    $redemption->reward?->reward_name,
+
+                'point_required' =>
+                    (int) ($redemption->reward?->point_required ?? 0),
+            ],
         ],
     ]);
 }

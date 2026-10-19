@@ -7,359 +7,228 @@ use App\Models\Reward;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-
 class RewardController extends Controller
 {
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+        $status = $request->input('status', '');
 
+        $rewards = Reward::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('reward_name', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%');
+                });
+            })
+            ->when(
+                in_array($status, ['tersedia', 'tidak_tersedia'], true),
+                function ($query) use ($status) {
+                    $query->where('status', $status);
+                }
+            )
+            ->latest('created_at')
+            ->paginate(10)
+            ->withQueryString();
 
-   public function index(Request $request)
-{
-    $search = trim((string) $request->input('search', ''));
-    $status = $request->input('status', '');
+        $totalReward = Reward::count();
 
-    $rewards = Reward::query()
-        ->when($search !== '', function ($query) use ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('reward_name', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
-            });
-        })
-        ->when(
-            in_array($status, ['tersedia', 'tidak_tersedia'], true),
-            function ($query) use ($status) {
-                $query->where('status', $status);
-            }
-        )
-        ->latest('created_at')
-        ->paginate(10)
-        ->withQueryString();
+        $rewardTersedia = Reward::where('status', 'tersedia')->count();
 
-    $totalReward = Reward::count();
+        $rewardTidakTersedia = Reward::where(
+            'status',
+            'tidak_tersedia'
+        )->count();
 
-    $rewardTersedia = Reward::where('status', 'tersedia')->count();
+        $totalStock = Reward::sum('stock');
 
-    $rewardTidakTersedia = Reward::where(
-        'status',
-        'tidak_tersedia'
-    )->count();
+        return view(
+            'admin.rewards.index',
+            compact(
+                'rewards',
+                'totalReward',
+                'rewardTersedia',
+                'rewardTidakTersedia',
+                'totalStock'
+            )
+        );
+    }
 
-    $totalStock = Reward::sum('stock');
+    public function search(Request $request)
+    {
+        $rewards = Reward::query()
+            ->when($request->search, function ($query) use ($request) {
+                $query->where(
+                    'reward_name',
+                    'like',
+                    '%' . $request->search . '%'
+                );
+            })
+            ->when($request->status, function ($query) use ($request) {
+                $query->where(
+                    'status',
+                    $request->status
+                );
+            })
+            ->latest()
+            ->get();
 
-    return view('admin.rewards.index', compact(
-        'rewards',
-        'totalReward',
-        'rewardTersedia',
-        'rewardTidakTersedia',
-        'totalStock'
-    ));
-}
-
-public function search(Request $request)
-{
-
-    $rewards = Reward::query()
-
-        ->when($request->search, function($query) use ($request){
-
-            $query->where(
-                'reward_name',
-                'like',
-                '%' . $request->search . '%'
-            );
-
-        })
-
-
-        ->when($request->status, function($query) use ($request){
-
-            $query->where(
-                'status',
-                $request->status
-            );
-
-        })
-
-
-        ->latest()
-        ->get();
-
-
-
-    return view(
-        'admin.rewards.partials.table',
-        compact('rewards')
-    );
-
-}
-
-
+        return view(
+            'admin.rewards.partials.table',
+            compact('rewards')
+        );
+    }
 
     public function create()
     {
-
         return view(
             'admin.rewards.create'
         );
-
     }
-
-
-
-
 
     public function store(Request $request)
     {
-
         $validated = $request->validate([
-
-
-            'reward_name'=>[
+            'reward_name' => [
                 'required',
                 'string',
                 'max:255'
             ],
 
-
-            'description'=>[
+            'description' => [
                 'nullable',
                 'string'
             ],
 
+            'image' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048'
+            ],
 
-           'image'=>[
-    'nullable',
-    'image',
-    'mimes:jpg,jpeg,png,webp',
-    'max:2048'
-],
-
-
-            'point_required'=>[
+            'point_required' => [
                 'required',
                 'integer',
                 'min:1'
             ],
 
-
-            'stock'=>[
+            'stock' => [
                 'required',
                 'integer',
                 'min:0'
             ],
 
-
-            'status'=>[
+            'status' => [
                 'required',
                 'in:tersedia,tidak_tersedia'
             ]
-
-
         ]);
 
-if($request->hasFile('image')){
-
-    $validated['image_path'] =
-        $request->file('image')
-        ->store('rewards','public');
-
-}
+        if ($request->hasFile('image')) {
+            $validated['image_path'] =
+                $request->file('image')
+                    ->store('rewards', 'public');
+        }
 
         Reward::create($validated);
 
-
-
         return redirect()
-
             ->route('admin.rewards.index')
-
             ->with(
                 'success',
                 'Reward berhasil ditambahkan'
             );
-
     }
-
-
-
-
 
     public function edit($id)
     {
-
         $reward = Reward::findOrFail($id);
-
 
         return view(
             'admin.rewards.edit',
             compact('reward')
         );
-
     }
 
+    public function update(Request $request, $id)
+    {
+        $reward = Reward::findOrFail($id);
 
+        $validated = $request->validate([
+            'reward_name' => [
+                'required',
+                'string',
+                'max:255'
+            ],
 
+            'description' => [
+                'nullable',
+                'string'
+            ],
 
+            'image' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048'
+            ],
 
-   public function update(Request $request,$id)
-{
+            'point_required' => [
+                'required',
+                'integer',
+                'min:1'
+            ],
 
-    $reward = Reward::findOrFail($id);
+            'stock' => [
+                'required',
+                'integer',
+                'min:0'
+            ],
 
+            'status' => [
+                'required',
+                'in:tersedia,tidak_tersedia'
+            ]
+        ]);
 
+        if ($request->hasFile('image')) {
+            if ($reward->image_path) {
+                Storage::disk('public')
+                    ->delete($reward->image_path);
+            }
 
-    $validated = $request->validate([
-
-
-        'reward_name'=>[
-            'required',
-            'string',
-            'max:255'
-        ],
-
-
-        'description'=>[
-            'nullable',
-            'string'
-        ],
-
-
-        'image'=>[
-            'nullable',
-            'image',
-            'mimes:jpg,jpeg,png,webp',
-            'max:2048'
-        ],
-
-
-        'point_required'=>[
-            'required',
-            'integer',
-            'min:1'
-        ],
-
-
-        'stock'=>[
-            'required',
-            'integer',
-            'min:0'
-        ],
-
-
-        'status'=>[
-            'required',
-            'in:tersedia,tidak_tersedia'
-        ]
-
-    ]);
-
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Update Image
-    |--------------------------------------------------------------------------
-    */
-
-
-    if($request->hasFile('image')){
-
-
-        // hapus gambar lama
-
-        if($reward->image_path){
-
-            Storage::disk('public')
-                ->delete($reward->image_path);
-
+            $validated['image_path'] =
+                $request->file('image')
+                    ->store('rewards', 'public');
         }
 
+        $reward->update($validated);
 
-
-        // simpan gambar baru
-
-        $validated['image_path'] =
-            $request->file('image')
-            ->store('rewards','public');
-
-
+        return redirect()
+            ->route('admin.rewards.index')
+            ->with(
+                'success',
+                'Reward berhasil diperbarui'
+            );
     }
 
+    public function destroy($id)
+    {
+        $reward = Reward::findOrFail($id);
 
+        if ($reward->image_path) {
+            Storage::disk('public')
+                ->delete($reward->image_path);
+        }
 
+        $reward->delete();
 
-
-    unset($validated['image']);
-
-
-
-    $reward->update($validated);
-
-
-
-
-    return redirect()
-
-        ->route('admin.rewards.index')
-
-        ->with(
-            'success',
-            'Reward berhasil diperbarui'
-        );
-
-}
-
-
-
-
-
- public function destroy($id)
-{
-
-    $reward = Reward::findOrFail($id);
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Hapus gambar reward
-    |--------------------------------------------------------------------------
-    */
-
-
-    if($reward->image_path){
-
-        Storage::disk('public')
-            ->delete($reward->image_path);
-
+        return redirect()
+            ->route('admin.rewards.index')
+            ->with(
+                'success',
+                'Reward berhasil dihapus'
+            );
     }
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Hapus data reward permanen
-    |--------------------------------------------------------------------------
-    */
-
-
-    $reward->delete();
-
-
-
-
-    return redirect()
-
-        ->route('admin.rewards.index')
-
-        ->with(
-            'success',
-            'Reward berhasil dihapus'
-        );
-
-}
-
-
 }

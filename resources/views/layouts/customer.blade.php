@@ -125,31 +125,16 @@
     }
 
     .cc-logo {
-        width: 54px;
-        height: 54px;
-
-        display: grid;
-
-        place-items: center;
-
-        flex-shrink: 0;
-
-        border: 1.6px solid #B79261;
-
-        border-radius: 50%;
-
-        background: transparent;
-
-        color: #FFFFFF;
-
-        font-size: 9px;
-
-        font-weight: 600;
-
-        line-height: 1.1;
-
-        text-align: center;
-    }
+    display: block;
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: #FFFFFF;
+    object-fit: cover;
+    object-position: center;
+}
 
     .cc-brand-name {
         color: #FFFFFF;
@@ -375,24 +360,52 @@
    DRAWER HEADER
 ========================================================= */
 
-    .cc-drawer-head {
-        display: flex;
+   
+.cc-drawer-head {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 38px;
+    align-items: center;
+    column-gap: 12px;
+    padding: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
 
-        align-items: center;
+.cc-drawer-head .cc-logo {
+    display: block;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    object-fit: contain;
+    object-position: center;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+}
 
-        gap: 12px;
+.cc-drawer-head > div:nth-child(2) {
+    min-width: 0;
+}
 
-        padding: 18px;
+.cc-drawer-head .cc-drawer-title {
+    font-size: 13px;
+    line-height: 1.3;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
 
-        border-bottom:
-            1px solid rgba(255, 255, 255, .08);
-    }
+.cc-drawer-head .cc-drawer-subtitle {
+    margin-top: 4px;
+    font-size: 8px;
+    white-space: nowrap;
+}
+
 
     .cc-drawer-close {
         width: 38px;
         height: 38px;
 
-        margin-left: auto;
+        margin-left: 0;
+        justify-self: end;
 
         display: grid;
 
@@ -953,6 +966,66 @@
         }
 
     }
+
+
+
+    
+/* PERBAIKAN HEADER MENU HP - 380px KE BAWAH */
+@media (max-width: 380px) {
+    .cc-drawer-head {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 10px !important;
+        padding: 14px 12px !important;
+        min-height: 72px;
+        box-sizing: border-box;
+    }
+
+    .cc-drawer-head .cc-logo {
+        display: block !important;
+        flex: 0 0 42px !important;
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        min-height: 42px !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 50%;
+        object-fit: contain;
+    }
+
+    .cc-drawer-head > div:nth-child(2) {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: auto !important;
+    }
+
+    .cc-drawer-head .cc-drawer-title {
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+    }
+
+    .cc-drawer-head .cc-drawer-subtitle {
+        margin-top: 4px !important;
+        font-size: 8px !important;
+        line-height: 1.3;
+    }
+
+    .cc-drawer-head .cc-drawer-close {
+        display: grid !important;
+        flex: 0 0 36px !important;
+        width: 36px !important;
+        height: 36px !important;
+        margin-left: auto !important;
+        padding: 0 !important;
+        align-self: center;
+    }
+}
+
     </style>
 
     @stack('head')
@@ -974,10 +1047,11 @@
 
         <div class="cc-brand">
 
-            <div class="cc-logo">
-                Saé<br>
-                ROJEL
-            </div>
+            <img
+    src="{{ asset('images/sae-logo.png') }}"
+    alt="Logo SAÉ CAFE ROJEL"
+    class="cc-logo"
+>
 
             <div class="cc-brand-name">
                 SAÉ CAFE ROJEL
@@ -1135,41 +1209,50 @@
          MOBILE DRAWER
     ====================================================== -->
 
-    <aside class="cc-drawer" id="ccDrawer" aria-hidden="true">
+   
+<aside class="cc-drawer" id="ccDrawer" aria-hidden="true">
 
+    <!-- DRAWER HEADER -->
+    <div class="cc-drawer-head">
 
-        <!-- DRAWER HEADER -->
+        <img
+            src="{{ asset('images/sae-logo.png') }}"
+            alt="Logo SAÉ CAFE ROJEL"
+            class="cc-logo"
+        >
 
-        <div class="cc-drawer-head">
-
-            <div class="cc-logo">
-                Saé<br>
-                ROJEL
+        <div>
+            <div class="cc-drawer-title">
+                SAÉ CAFE ROJEL
             </div>
 
-            <div>
-
-                <div class="cc-drawer-title">
-                    SAÉ CAFE ROJEL
-                </div>
-
-                <div class="cc-drawer-subtitle">
-                    MEMBER AREA
-                </div>
-
+            <div class="cc-drawer-subtitle">
+                MEMBER AREA
             </div>
-
-
-            <button type="button" class="cc-drawer-close" id="ccMenuClose" aria-label="Tutup menu">
-
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M6 6l12 12"></path>
-                    <path d="M18 6L6 18"></path>
-                </svg>
-
-            </button>
-
         </div>
+
+        <button
+            type="button"
+            class="cc-drawer-close"
+            id="ccMenuClose"
+            aria-label="Tutup menu"
+        >
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+            >
+                <path d="M6 6l12 12"></path>
+                <path d="M18 6L6 18"></path>
+            </svg>
+        </button>
+
+    </div>
+
+    <!-- DRAWER MENU -->
+
 
 
         <!-- DRAWER MENU -->

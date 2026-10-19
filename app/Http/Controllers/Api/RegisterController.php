@@ -27,6 +27,8 @@ class RegisterController extends Controller
 
             'nomor_hp' => 'required|string|unique:users,username',
 
+             'tanggal_lahir' => 'nullable|date',
+
             'email' => 'nullable|email',
 
             'password' => 'required|min:6'
@@ -122,6 +124,8 @@ class RegisterController extends Controller
                 'nomor_hp' => $request->nomor_hp,
 
                 'email' => $request->email,
+
+                'tanggal_lahir' => $request->tanggal_lahir,
 
                 'tanggal_daftar' => now(),
 

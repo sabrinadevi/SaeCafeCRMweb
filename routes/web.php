@@ -23,6 +23,26 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [WebAuthController::class, 'registerStore'])->name('register.store');
     Route::get('/register/verify', [WebAuthController::class, 'verifyRegistration'])->name('register.verify');
     Route::post('/register/verify', [WebAuthController::class, 'verifyRegistrationStore'])->name('register.verify.store');
+    Route::post('/register/verify/resend',[WebAuthController::class, 'resendRegistrationOtp'])
+    ->middleware('throttle:3,1')
+    ->name('register.verify.resend');
+    // Lupa password
+Route::get('/forgot-password', [WebAuthController::class, 'forgotPassword'])
+    ->name('password.forgot');
+
+Route::post('/forgot-password', [WebAuthController::class, 'sendPasswordResetOtp'])
+    ->name('password.forgot.send');
+
+// Verifikasi OTP untuk ubah password
+Route::get('/forgot-password/verify', [WebAuthController::class, 'verifyPasswordResetOtp'])
+    ->name('password.forgot.verify');
+
+Route::post('/forgot-password/verify', [WebAuthController::class, 'verifyPasswordResetOtpStore'])
+    ->name('password.forgot.verify.store');
+
+Route::post('/forgot-password/verify/resend', [WebAuthController::class, 'resendPasswordResetOtp'])
+    ->middleware('throttle:3,1')
+    ->name('password.forgot.verify.resend');
 });
 
 Route::post('/logout', [WebAuthController::class, 'logout'])->middleware('auth')->name('logout');
@@ -35,29 +55,70 @@ Route::middleware(['auth', 'role:customer'])->prefix('customer')->name('customer
     Route::get('/reward', [CustomerRewardController::class, 'index'])->name('reward');
     Route::post('/reward/redeem', [CustomerRewardController::class, 'redeem'])->name('reward.redeem');
     Route::get('/reward/redemption/{code}', [CustomerRewardController::class, 'redemption'])->name('reward.redemption');
+    Route::get('/reward/redemption/{code}/status',[CustomerRewardController::class, 'redemptionStatus'])->name('reward.redemption.status');
     Route::get('/transaksi', [TransactionController::class, 'index'])->name('transaction');
+    Route::get(
+    '/reward/redemption/{code}/details',
+    [CustomerRewardController::class, 'redemptionDetails']
+)->name('reward.redemption.details');
 });
 
+
 Route::middleware(['auth', 'role:staff'])->prefix('staff')->name('staff.')->group(function () {
-    Route::get('/', [StaffController::class, 'dashboard'])->name('dashboard');
-    Route::get('/customers', [StaffController::class, 'customers'])->name('customers');
+    Route::get('/', [StaffController::class, 'dashboard'])
+        ->name('dashboard');
+
+    Route::get('/customers', [StaffController::class, 'customers'])
+        ->name('customers');
+
     Route::get('/customers/create', [StaffController::class, 'createCustomer'])
-    ->name('customers.create');
-Route::post('/customers', [StaffController::class, 'storeCustomer'])
-    ->name('customers.store');
+        ->name('customers.create');
+
+    Route::post('/customers', [StaffController::class, 'storeCustomer'])
+        ->name('customers.store');
+
+    // Verifikasi OTP untuk tambah member oleh staff
+    Route::get('/customers/verify-otp', [StaffController::class, 'verifyCustomerOtp'])
+        ->name('customers.verify');
+
+    Route::post('/customers/verify-otp', [StaffController::class, 'verifyCustomerOtpStore'])
+        ->name('customers.verify.store');
+
+    Route::post('/customers/verify-otp/resend', [StaffController::class, 'resendCustomerOtp'])
+        ->middleware('throttle:3,1')
+        ->name('customers.verify.resend');
+
     Route::get('/transactions', [StaffController::class, 'transactions'])
-    ->name('transactions');
-    Route::post('/customer/find', [StaffController::class, 'findCustomer'])->name('customer.find');
+        ->name('transactions');
+
+    Route::post('/customer/find', [StaffController::class, 'findCustomer'])
+        ->name('customer.find');
+
     Route::post('/customer/scan', [StaffController::class, 'scanCustomer'])
-    ->name('customer.scan');
+        ->name('customer.scan');
+
     Route::get('/transactions/create/{id_customer}', [StaffController::class, 'createTransaction'])
-    ->name('transactions.create');
-    Route::post('/transactions', [StaffController::class, 'storeTransaction'])->name('transactions.store');
-    Route::get('/redemptions', [StaffController::class, 'redemptions'])->name('redemptions');
-    Route::post('/redemptions/confirm', [StaffController::class, 'confirmRedemption'])->name('redemptions.confirm');
-    Route::post('/redemptions/cancel', [StaffController::class, 'cancelRedemption'])->name('redemptions.cancel');
-    Route::get('/rewards', [StaffController::class, 'rewards'])->name('rewards');
+        ->name('transactions.create');
+
+    Route::post('/transactions', [StaffController::class, 'storeTransaction'])
+        ->name('transactions.store');
+
+    Route::get('/redemptions', [StaffController::class, 'redemptions'])
+        ->name('redemptions');
+
+    Route::post('/redemptions/scan', [StaffController::class, 'scanRedemption'])
+        ->name('redemptions.scan');
+
+    Route::post('/redemptions/confirm', [StaffController::class, 'confirmRedemption'])
+        ->name('redemptions.confirm');
+
+    Route::post('/redemptions/cancel', [StaffController::class, 'cancelRedemption'])
+        ->name('redemptions.cancel');
+
+    Route::get('/rewards', [StaffController::class, 'rewards'])
+        ->name('rewards');
 });
+
 
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')

@@ -38,39 +38,99 @@ class CustomerController extends Controller
         | REWARD AKTIF
         |--------------------------------------------------------------------------
         */
-        $rewards = Reward::where('status', 'tersedia')
-            ->where('stock', '>', 0)
-            ->withCount(['redemptions as successful_redemptions' => fn ($q) => $q->where('status', 'berhasil')])
-            ->orderByDesc('successful_redemptions')
-            ->orderByDesc('created_at')
-            ->limit(4)
-            ->get();
+       $rewards = Reward::where('status', 'tersedia')
+    ->where('stock', '>', 0)
+    ->withCount([
+        'redemptions as successful_redemptions' => function ($q) {
+            $q->where('status', 'berhasil');
+        }
+    ])
+    ->orderByDesc('successful_redemptions')
+    ->orderByDesc('created_at')
+    ->limit(3)
+    ->get();
 
-        $favoriteReward = $rewards->first();
+$favoriteReward = $rewards->first();
 
-        /*
-        |--------------------------------------------------------------------------
-        | RIWAYAT POINT
-        |--------------------------------------------------------------------------
-        */
-        $pointHistory = $customer
-            ->pointHistories()
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+      /*
+|--------------------------------------------------------------------------
+| AKTIVITAS TERAKHIR
+|--------------------------------------------------------------------------
+*/
+$transactions = $customer
+    ->transactions()
+    ->orderBy('tanggal_transaksi', 'desc')
+    ->get();
+
+$redemptions = $customer
+    ->redemptions()
+    ->with('reward')
+    ->where('status', 'berhasil')
+    ->orderBy('redeem_date', 'desc')
+    ->get();
+
+$activities = collect();
+
+/*
+|--------------------------------------------------------------------------
+| TRANSAKSI
+|--------------------------------------------------------------------------
+*/
+foreach ($transactions as $transaction) {
+
+    if ((int) $transaction->point_didapat <= 0) {
+        continue;
+    }
+
+ $activities->push([
+    'date' => $transaction->tanggal_transaksi,
+    'title' => 'Transaksi ' . $transaction->kode_transaksi,
+    'point' => (int) $transaction->point_didapat,
+    'is_redeem' => false,
+    'reward_image' => null,
+]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| REDEEM
+|--------------------------------------------------------------------------
+*/
+foreach ($redemptions as $redemption) {
+
+   $activities->push([
+    'date' => $redemption->redeem_date,
+    'title' => 'Redeem ' . ($redemption->reward->reward_name ?? 'Reward'),
+    'point' => (int) $redemption->point_used,
+    'is_redeem' => true,
+    'reward_image' => $redemption->reward->image_path ?? null,
+]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| URUTKAN AKTIVITAS TERBARU
+|--------------------------------------------------------------------------
+*/
+$activities = $activities
+    ->sortByDesc(function ($item) {
+        return \Carbon\Carbon::parse($item['date']);
+    })
+    ->take(5)
+    ->values();
 
         /*
         |--------------------------------------------------------------------------
         | KIRIM DATA KE DASHBOARD
         |--------------------------------------------------------------------------
         */
-        return view('customer.dashboard', [
-            'user'         => $user,
-            'customer'     => $customer,
-            'rewards'      => $rewards,
-            'pointHistory' => $pointHistory,
-            'favoriteReward' => $favoriteReward,
-        ]);
+       return view('customer.dashboard', [
+    'user'            => $user,
+    'customer'        => $customer,
+    'rewards'         => $rewards,
+    'activities'      => $activities,
+    'favoriteReward'  => $favoriteReward,
+]);
     }
 
 

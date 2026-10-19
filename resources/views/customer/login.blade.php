@@ -268,9 +268,24 @@
         line-height: 1.45;
     }
 
-    .form-group {
-        margin-bottom: 18px;
-    }
+   .forgot-link {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -5px;
+    margin-bottom: 18px;
+    font-size: 11px;
+}
+
+.forgot-link a {
+    color: var(--brown-800);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.forgot-link a:hover {
+    color: var(--brown-950);
+    text-decoration: underline;
+}
 
     label {
         display: block;
@@ -418,6 +433,14 @@
             padding: 36px 34px 32px;
         }
     }
+
+    /* Khusus tampilan desktop */
+@media (min-width: 901px) {
+    .forgot-link {
+        position: relative;
+        top: 12px;
+    }
+}
 
     @media (max-width: 600px) {
         body {
@@ -808,6 +831,13 @@
                                 ◉
                             </button>
                         </div>
+                                       </div>
+
+                    {{-- LUPA PASSWORD --}}
+                    <div class="forgot-link">
+                        <a href="{{ route('password.forgot') }}">
+                            Lupa password?
+                        </a>
                     </div>
 
                     <button type="submit">

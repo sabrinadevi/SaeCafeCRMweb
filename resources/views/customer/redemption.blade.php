@@ -173,7 +173,9 @@
 }
 
 
-/* =========================================================
+/* =================
+
+========================================
    BACK BUTTON
 ========================================================= */
 
@@ -238,86 +240,436 @@
 }
 
 
+
+
+
+
+
 /* =========================================================
    RESPONSIVE
 ========================================================= */
 
-@media (max-width: 600px) {
+/* =========================================================
+   1. DESKTOP: 721px KE ATAS
+========================================================= */
+@media (min-width: 721px) {
 
     .redemption-page {
+        width: 100%;
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 30px 24px 26px;
+
+        text-align: center;
+
+        background: #FFFDF9;
+        border: 1px solid #E9DED1;
+        border-radius: 34px;
+
+        box-shadow: 0 10px 30px rgba(70, 45, 25, 0.08);
+        box-sizing: border-box;
+    }
+
+    .redemption-title {
+        font-size: 24px;
+    }
+
+    .redemption-qr {
+        width: 180px;
+        height: 180px;
+        padding: 8px;
+        border-radius: 18px;
+    }
+
+    .redemption-qr svg {
+        max-width: 164px;
+        max-height: 164px;
+    }
+
+    .redemption-code {
+        font-size: 24px;
+    }
+
+    .redemption-info-card {
+        min-height: 72px;
+        border-radius: 14px;
+    }
+
+    .redemption-back {
+        min-height: 44px;
+        border-radius: 12px;
+    }
+
+    .redemption-note {
+        border-radius: 14px;
+    }
+}
+
+
+
+
+
+
+/* =========================================================
+   2. TABLET: 561px–720px
+========================================================= */
+@media (min-width: 561px) and (max-width: 720px) {
+
+    /* KARTU UTAMA REDEMPTION */
+    .redemption-page {
+        width: 100%;
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 22px 20px;
+
+        border: 1px solid #E9DED1;
+        border-radius: 16px;
+        background: #FFFDF9;
+        box-shadow: 0 10px 30px rgba(70, 45, 25, 0.08);
+
+        box-sizing: border-box;
+    }
+
+    /* JUDUL DAN TEKS */
+    .redemption-label {
+        margin-top: 16px;
+        font-size: 10px;
+    }
+
+    .redemption-title {
+        margin: 7px 0 4px;
+        font-size: 23px;
+        line-height: 1.3;
+    }
+
+    .redemption-subtitle {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    /* QR CODE */
+    .redemption-qr {
+        width: 170px;
+        height: 170px;
+        margin: 20px auto 16px;
+        padding: 7px;
+        border-radius: 20px;
+        box-sizing: border-box;
+    }
+
+    .redemption-qr svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: 154px;
+        max-height: 154px;
+    }
+
+    /* KODE REDEMPTION */
+    .redemption-code-label {
+        font-size: 11px;
+    }
+
+    .redemption-code {
+        margin-top: 4px;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    /* INFORMASI POIN DAN STATUS */
+    .redemption-info {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .redemption-info-card {
+        min-width: 0;
+        min-height: 70px;
+        padding: 10px;
+        border-radius: 14px;
+        box-sizing: border-box;
+    }
+
+    .redemption-info-label {
+        font-size: 10px;
+    }
+
+    .redemption-info-value {
+        font-size: 16px;
+        overflow-wrap: anywhere;
+    }
+
+    /* TOMBOL KEMBALI */
+    .redemption-back {
+        min-height: 42px;
+        margin-top: 16px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 11px;
+        box-sizing: border-box;
+    }
+
+    /* CATATAN */
+    .redemption-note {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 14px;
+        font-size: 11px;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+}
+
+
+
+
+/* =========================================================
+   3. MOBILE: 381px–560px
+========================================================= */
+@media (min-width: 381px) and (max-width: 560px) {
+
+    /* KARTU UTAMA REDEMPTION */
+    .redemption-page {
+        width: 100%;
+        max-width: none;
+        margin: 0 auto;
         padding: 20px 16px;
 
         border-radius: 16px;
+        box-sizing: border-box;
+    }
+
+    /* JUDUL DAN TEKS */
+    .redemption-label {
+        margin-top: 16px;
+        font-size: 10px;
     }
 
     .redemption-title {
         font-size: 22px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
     }
 
+    .redemption-subtitle {
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    /* QR CODE */
     .redemption-qr {
         width: 155px;
         height: 155px;
-
-        margin-top: 20px;
-
+        margin: 20px auto 16px;
         padding: 7px;
+
+        box-sizing: border-box;
     }
 
     .redemption-qr svg {
+        display: block;
+        width: 100%;
+        height: 100%;
         max-width: 141px;
         max-height: 141px;
     }
 
+    /* KODE REDEMPTION */
+    .redemption-code-label {
+        font-size: 10px;
+    }
+
     .redemption-code {
+        margin-top: 4px;
         font-size: 20px;
-
-        letter-spacing: .06em;
+        line-height: 1.4;
+        letter-spacing: 0.05em;
+        overflow-wrap: anywhere;
     }
 
-}
-
-
-@media (max-width: 420px) {
-
-    .redemption-page {
-        padding: 18px 12px;
-    }
-
-    .redemption-qr {
-        width: 135px;
-        height: 135px;
-
-        margin-top: 18px;
-
-        padding: 6px;
-    }
-
-    .redemption-qr svg {
-        max-width: 123px;
-        max-height: 123px;
-    }
-
-    .redemption-code {
-        font-size: 18px;
-    }
-
+    /* INFORMASI POIN DAN STATUS */
     .redemption-info {
+        margin-top: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
     }
 
     .redemption-info-card {
+        min-width: 0;
         min-height: 68px;
+        padding: 10px 7px;
 
-        padding: 10px 6px;
+        box-sizing: border-box;
     }
 
-    .redemption-back {
-        min-height: 40px;
+    .redemption-info-label {
+        font-size: 9px;
+    }
 
+    .redemption-info-value {
+        font-size: 15px;
+        overflow-wrap: anywhere;
+    }
+
+    /* TOMBOL KEMBALI */
+    .redemption-back {
+        min-height: 42px;
+        margin-top: 14px;
         font-size: 10px;
+        box-sizing: border-box;
+    }
+
+    /* CATATAN */
+    .redemption-note {
+        margin-top: 14px;
+        padding: 11px;
+        font-size: 10px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+        box-sizing: border-box;
     }
 
 }
+
+
+/* =========================================================
+   4. MOBILE KECIL: 380px KE BAWAH
+========================================================= */
+@media (max-width: 380px) {
+
+    /* KARTU UTAMA REDEMPTION */
+    .redemption-page {
+        width: 100%;
+        max-width: none;
+        margin: 0 auto;
+        padding: 16px 10px;
+        border-radius: 14px;
+        box-sizing: border-box;
+    }
+
+    /* LABEL DAN JUDUL */
+    .redemption-label {
+        margin-top: 12px;
+        font-size: 9px;
+        letter-spacing: 0.08em;
+    }
+
+    .redemption-title {
+        margin: 6px 0 4px;
+        font-size: 20px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+
+    .redemption-subtitle {
+        font-size: 10px;
+        line-height: 1.5;
+    }
+
+    /* QR CODE */
+    .redemption-qr {
+        display: grid;
+        place-items: center;
+
+        width: 135px;
+        height: 135px;
+        margin: 18px auto 14px;
+        padding: 6px;
+
+        border-radius: 12px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .redemption-qr svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: 123px;
+        max-height: 123px;
+    }
+
+    /* KODE REDEMPTION */
+    .redemption-code-label {
+        font-size: 9px;
+    }
+
+    .redemption-code {
+        margin-top: 4px;
+        font-size: 17px;
+        line-height: 1.4;
+        letter-spacing: 0.03em;
+        overflow-wrap: anywhere;
+    }
+
+    /* KARTU INFORMASI POIN DAN STATUS */
+    .redemption-info {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+        margin-top: 12px;
+    }
+
+    .redemption-info-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        min-width: 0;
+        min-height: 64px;
+        padding: 9px 5px;
+
+        border-radius: 10px;
+        box-sizing: border-box;
+    }
+
+    .redemption-info-label {
+        font-size: 8px;
+        line-height: 1.4;
+    }
+
+    .redemption-info-value {
+        margin-top: 3px;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+    }
+
+    /* TOMBOL KEMBALI */
+    .redemption-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 100%;
+        min-height: 38px;
+        margin-top: 12px;
+        padding: 9px 8px;
+
+        border-radius: 8px;
+        font-size: 10px;
+        box-sizing: border-box;
+    }
+
+    /* CATATAN */
+    .redemption-note {
+        margin-top: 12px;
+        padding: 10px 8px;
+
+        border-radius: 10px;
+        font-size: 9px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+        box-sizing: border-box;
+    }
+
+}
+
 </style>
 
 

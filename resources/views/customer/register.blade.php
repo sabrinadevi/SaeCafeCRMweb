@@ -460,8 +460,7 @@
                 padding: 34px 34px 30px;
             }
         }
-
-        @media (max-width: 600px) {
+   @media (max-width: 600px) {
             body {
                 align-items: flex-start;
                 padding: 14px 10px;
@@ -729,6 +728,30 @@
                             </div>
                         </div>
 
+
+                         {{-- EMAIL --}}
+                        <div class="form-group full">
+                            <label
+                                class="form-label"
+                                for="email"
+                            >
+                                Email
+                                <span class="optional">(Akan digunakan untuk verifikasi akun)</span>
+                            </label>
+
+                            <div class="input-wrap">
+                                <input
+                                    class="form-input"
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    value="{{ old('email') }}"
+                                    placeholder="contoh@email.com"
+                                    autocomplete="email"
+                                >
+                            </div>
+                        </div>
+
                         {{-- TANGGAL LAHIR --}}
                         <div class="form-group">
                             <label
@@ -750,29 +773,6 @@
                             </div>
                         </div>
 
-                        {{-- EMAIL --}}
-                        <div class="form-group full">
-                            <label
-                                class="form-label"
-                                for="email"
-                            >
-                                Email
-                                <span class="optional">(opsional)</span>
-                            </label>
-
-                            <div class="input-wrap">
-                                <input
-                                    class="form-input"
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value="{{ old('email') }}"
-                                    placeholder="contoh@email.com"
-                                    autocomplete="email"
-                                >
-                            </div>
-                        </div>
-
                         {{-- PASSWORD --}}
                         <div class="form-group">
                             <label
@@ -788,7 +788,7 @@
                                     type="password"
                                     id="password"
                                     name="password"
-                                    placeholder="Minimal 6 karakter"
+                                    placeholder="Minimal 8 karakter"
                                     autocomplete="new-password"
                                     required
                                 >

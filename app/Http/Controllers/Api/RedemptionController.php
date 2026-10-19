@@ -56,6 +56,33 @@ class RedemptionController extends Controller
     }
 }
 
+
+    public function status(
+        Request $request,
+        string $code
+    ) {
+        $customer = $request->user()->customer;
+
+        $redemption = $customer
+            ->redemptions()
+            ->where('redemption_code', $code)
+            ->first();
+
+        if (!$redemption) {
+            return response()->json([
+                'message' => 'Redemption tidak ditemukan.',
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'redemption_code' => $redemption->redemption_code,
+                'status' => $redemption->status,
+                'point_used' => $redemption->point_used,
+            ],
+        ]);
+    }
+    
     public function history(Request $request)
     {
         $data = $request->user()->customer->redemptions()->with('reward')->latest()->get();

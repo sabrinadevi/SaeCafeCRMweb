@@ -4,6 +4,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\RegisterController;
 
 
 use App\Http\Controllers\Api\CustomerController;
@@ -37,7 +38,10 @@ Route::middleware('throttle:5,1')
         AuthController::class,
         'login'
     ]);
-
+Route::post('/register', [
+    RegisterController::class,
+    'register'
+]);
 
 Route::middleware('moka.key')
 ->post('/integrations/moka/transaction',[
@@ -72,6 +76,8 @@ Route::middleware([
         'profile'
     ]);
 
+    Route::post('/change-password', [CustomerController::class,'changePassword']);
+
 
     Route::get('/member-card', [
         CustomerController::class,
@@ -83,6 +89,12 @@ Route::middleware([
         CustomerController::class,
         'pointHistory'
     ]);
+    
+
+    Route::get('/transactions', [
+    TransactionController::class,
+    'history'
+]);
 
 
     Route::get('/rewards', [
@@ -97,10 +109,21 @@ Route::middleware([
     ]);
 
 
+    Route::get('/redeem/status/{code}', [
+    RedemptionController::class,
+    'status'
+    ]);
+
     Route::get('/redeems', [
         RedemptionController::class,
         'history'
     ]);
+
+
+    Route::get('/favorite-rewards', [
+    CustomerController::class,
+    'favoriteRewards'
+]);
 
 });
 
@@ -178,6 +201,8 @@ Route::middleware([
         StaffRedemptionController::class,
         'redeem'
     ]);
+
+    
 
 
 
